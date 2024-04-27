@@ -1,6 +1,7 @@
 package it.unibo.ai.didattica.competition.tablut.domain;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -18,10 +19,10 @@ import it.unibo.ai.didattica.competition.tablut.exceptions.*;
  * Game engine inspired by the Ashton Rules of Tablut
  * 
  * 
- * @author A. Piretti, Andrea Galassi
+ * @author A. Piretti, Andrea Galassi, snAI team
  *
  */
-public class GameAshtonTablut implements Game {
+public class GameAshtonTablut implements Game, aima.core.search.adversarial.Game<State, Action, State.Turn> {
 
 	/**
 	 * Number of repeated states that can occur before a draw
@@ -743,11 +744,381 @@ public class GameAshtonTablut implements Game {
 		drawConditions.clear();
 	}
 	
-
+	
+	
+	// implementing aima methods
+	
 	@Override
 	public void endGame(State state) {
 		this.loggGame.fine("Stato:\n"+state.toString());
 	}
 
+	/**
+	 * Get the player who must make the next move
+	 *
+	 * @param state Current state of the game
+	 *
+	 * @return The turn of the game (W = WHITE, B = BLACK)
+	 */
+	@Override
+	public State.Turn getPlayer(State state)
+	{
+		return state.getTurn();
+	}
 
+	/**
+	 * Method that compute a list of all possible actions for the current player according to the rules of the game
+	 *
+	 * @param state Current state of the game
+	 *
+	 * @return List of all the Action allowed from current state for each pawn of the player
+	 */
+	@Override
+	public List<Action> getActions(State state)
+	{
+		State.Turn turn = state.getTurn();
+		List<Action> possibleActions = new ArrayList<Action>();
+
+		// Loop through rows
+		for (int i = 0; i < state.getBoard().length; i++)
+		{
+			// Loop through columns
+			for (int j = 0; j < state.getBoard().length; j++)
+			{
+				State.Pawn p = state.getPawn(i, j);
+
+				// If pawn color is equal of turn color
+				if (p.toString().equals(turn.toString())
+						|| (p.equals(State.Pawn.KING) && turn.equals(State.Turn.WHITE)))
+				{
+					// Search on top of pawn
+					for (int k = i-1; k >= 0; k--) {
+						// Break if pawn is out of citadels, and it is moving on a citadel
+						if (!citadels.contains(state.getBox(i, j)) && citadels.contains(state.getBox(k, j)))
+						{
+							break;
+						}
+						// Check if we are moving on an empty cell
+						else if (state.getPawn(k, j).equalsPawn(State.Pawn.EMPTY.toString()))
+						{
+							String from = state.getBox(i, j);
+							String to = state.getBox(k, j);
+
+							Action action = null;
+							try {
+								action = new Action(from, to, turn);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+							// Check if action is admissible and if it is, add it to list possibleActions
+							if(isPossibleMove(state.clone(), action))
+								possibleActions.add(action);
+
+						} else break; // There is a pawn in the same column, and it cannot be crossed
+					}
+
+					// Search on bottom of pawn
+					for (int k = i+1; k < state.getBoard().length; k++)
+					{
+						// Break if pawn is out of citadels, and it is moving on a citadel
+						if (!citadels.contains(state.getBox(i, j)) && citadels.contains(state.getBox(k, j)))
+						{
+							break;
+						}
+						// Check if we are moving on a empty cell
+						else if (state.getPawn(k, j).equalsPawn(State.Pawn.EMPTY.toString()))
+						{
+							String from = state.getBox(i, j);
+							String to = state.getBox(k, j);
+
+							Action action = null;
+							try {
+								action = new Action(from, to, turn);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+							// Check if action is admissible and if it is, add it to list possibleActions
+							if(isPossibleMove(state.clone(), action))
+								possibleActions.add(action);
+
+						} else 	break; // There is a pawn in the same column, and it cannot be crossed
+					}
+
+					// Search on left of pawn
+					for (int k = j-1; k >= 0; k--)
+					{
+						// Break if pawn is out of citadels, and it is moving on a citadel
+						if (!citadels.contains(state.getBox(i, j)) && citadels.contains(state.getBox(i, k)))
+						{
+							break;
+						}
+						// Check if we are moving on an empty cell
+						else if (state.getPawn(i, k).equalsPawn(State.Pawn.EMPTY.toString()))
+						{
+							String from = state.getBox(i, j);
+							String to = state.getBox(i, k);
+
+							Action action = null;
+							try {
+								action = new Action(from, to, turn);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+							// Check if action is admissible and if it is, add it to list possibleActions
+							if(isPossibleMove(state.clone(), action))
+								possibleActions.add(action);
+
+						} else break; // There is a pawn in the same row, and it cannot be crossed
+					}
+
+					// Search on right of pawn
+					for (int k = j+1; k < state.getBoard().length; k++)
+					{
+						// Break if pawn is out of citadels, and it is moving on a citadel
+						if (!citadels.contains(state.getBox(i, j)) && citadels.contains(state.getBox(i, k)))
+						{
+							break;
+						}
+
+						// Check if we are moving on a empty cell
+						else if (state.getPawn(i, k).equalsPawn(State.Pawn.EMPTY.toString()))
+						{
+							String from = state.getBox(i, j);
+							String to = state.getBox(i, k);
+
+							Action action = null;
+							try {
+								action = new Action(from, to, turn);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+							// Check if action is admissible and if it is, add it to list possibleActions
+							if(isPossibleMove(state.clone(), action))
+								possibleActions.add(action);
+
+						} else break; // There is a pawn in the same row, and it cannot be crossed
+					}
+				}
+			}
+		}
+		return possibleActions;
+	}
+
+	/**
+	 * Method that performs an action in a given state and returns the resulting state
+	 *
+	 * @param state Current state
+	 * @param action Action admissible on the given state
+	 *
+	 * @return State obtained after performing the action
+	 */
+	@Override
+	public State getResult(State state, Action action)
+	{
+		// Move pawn
+		state = this.movePawn(state.clone(), action);
+
+		// Check the state for any capture
+		if (state.getTurn().equalsTurn("W"))
+			state = this.checkCaptureBlack(state, action);
+		else if (state.getTurn().equalsTurn("B"))
+			state = this.checkCaptureWhite(state, action);
+
+		return state;
+	}
+
+	/**
+	 * Check if a state is terminal, since a player has either won or drawn (i.e. the game ends)
+	 *
+	 * @param state Current state of the game
+	 *
+	 * @return true if the current state is terminal, otherwise false
+	 */
+	@Override
+	public boolean isTerminal(State state)
+	{
+		return state.getTurn().equals(State.Turn.WHITEWIN) ||
+				state.getTurn().equals(State.Turn.BLACKWIN) ||
+				state.getTurn().equals(State.Turn.DRAW);
+	}
+
+	/**
+	 * Method to evaluate a state using heuristics
+	 *
+	 * @param state	Current state
+	 * @param turn	Player that want to find the best moves in the search space
+	 *
+	 * @return Evaluation of the state
+	 */
+	@Override
+	public double getUtility(State state, State.Turn turn)
+	{
+		// Terminal state
+		if ((turn.equals(State.Turn.BLACK) && state.getTurn().equals(State.Turn.BLACKWIN))
+				|| (turn.equals(State.Turn.WHITE) && state.getTurn().equals(State.Turn.WHITEWIN)))
+			return Double.POSITIVE_INFINITY; // Win
+		else if ((turn.equals(State.Turn.BLACK) && state.getTurn().equals(State.Turn.WHITEWIN))
+				|| (turn.equals(State.Turn.WHITE) && state.getTurn().equals(State.Turn.BLACKWIN)))
+			return Double.NEGATIVE_INFINITY; // Lose
+
+		// Non-terminal state => get Heuristics for the current state
+		// TODO euristica
+		return Double.NaN;
+	}
+
+	/* Not used */
+	@Override
+	public State getInitialState()
+	{
+		return null;
+	}
+
+	/* Not used */
+	@Override
+	public State.Turn[] getPlayers()
+	{
+		return State.Turn.values();
+	}
+
+
+	
+	
+	
+	
+	/**
+	 * Checks if a given action is a possible move in the game.
+	 *
+	 * @param state  the current state of the game
+	 * @param action the action to be checked
+	 * @return true if the action is a valid move, false otherwise
+	 */
+	private boolean isPossibleMove(State state, Action action)
+	{
+		this.loggGame.fine(action.toString());
+		// Check if the action is valid
+		if (action.getTo().length() != 2 || action.getFrom().length() != 2) {
+			return false;
+		}
+		int columnFrom = action.getColumnFrom();
+		int columnTo = action.getColumnTo();
+		int rowFrom = action.getRowFrom();
+		int rowTo = action.getRowTo();
+
+		// Boundary check
+		if (columnFrom > state.getBoard().length - 1 || rowFrom > state.getBoard().length - 1
+				|| rowTo > state.getBoard().length - 1 || columnTo > state.getBoard().length - 1 || columnFrom < 0
+				|| rowFrom < 0 || rowTo < 0 || columnTo < 0) {
+			return false;
+		}
+
+		// Check if the pawn is moving
+		if (rowFrom == rowTo && columnFrom == columnTo) {
+			return false;
+		}
+
+		// Check if i'm moving a pawn of my color
+		switch (state.getTurn()) {
+			case WHITE:
+				if (!state.getPawn(rowFrom, columnFrom).equalsPawn("W")
+						&& !state.getPawn(rowFrom, columnFrom).equalsPawn("K")) {
+					return false;
+				}
+				break;
+			case BLACK:
+				if (!state.getPawn(rowFrom, columnFrom).equalsPawn("B")) {
+					return false;
+				}
+				break;
+			default:
+				// Should never happen
+				return false;
+		}
+
+		// Check of the validity of the movement (am I moving in a straight line?)
+		if (rowFrom != rowTo && columnFrom != columnTo) {
+			return false;
+		}
+
+		// Check it does't go on the throne
+		if (state.getPawn(rowTo, columnTo).equalsPawn(State.Pawn.THRONE.toString())) {
+			return false;
+		}
+
+		// Check if the destination cell is empty
+		if (!state.getPawn(rowTo, columnTo).equalsPawn(State.Pawn.EMPTY.toString())) {
+			return false;
+		}
+
+		// Check if the destination cell is a citadel or is trepassing a citadel
+		if (this.citadels.contains(state.getBox(rowTo, columnTo))
+				&& !this.citadels.contains(state.getBox(rowFrom, columnFrom))) {
+			return false;
+		}
+		if (this.citadels.contains(state.getBox(rowTo, columnTo))
+				&& this.citadels.contains(state.getBox(rowFrom, columnFrom))) {
+			if (rowFrom == rowTo) {
+				if (columnFrom - columnTo > 5 || columnFrom - columnTo < -5) {
+					return false;
+				}
+			} else {
+				if (rowFrom - rowTo > 5 || rowFrom - rowTo < -5) {
+					return false;
+				}
+			}
+		}
+
+		// Check if I'm trying to jump over other pieces
+		if (rowFrom == rowTo && columnFrom > columnTo) {
+
+				for (int i = columnTo; i < columnFrom; i++) {
+					if (!state.getPawn(rowFrom, i).equalsPawn(State.Pawn.EMPTY.toString())) {
+						return false;
+					}
+					if (this.citadels.contains(state.getBox(rowFrom, i))
+							&& !this.citadels.contains(state.getBox(action.getRowFrom(), action.getColumnFrom()))) {
+						return false;
+					}
+				}
+				
+			} else if(rowFrom == rowTo && columnFrom < columnTo) {
+				for (int i = columnFrom + 1; i <= columnTo; i++) {
+					if (!state.getPawn(rowFrom, i).equalsPawn(State.Pawn.EMPTY.toString())) {
+						return false;
+					}
+					if (this.citadels.contains(state.getBox(rowFrom, i))
+							&& !this.citadels.contains(state.getBox(action.getRowFrom(), action.getColumnFrom()))) {
+						return false;
+					}
+				}
+			}
+		 else if (columnFrom == columnTo && rowFrom > rowTo){
+
+				for (int i = rowTo; i < rowFrom; i++) {
+					if (!state.getPawn(i, columnFrom).equalsPawn(State.Pawn.EMPTY.toString())) {
+						return false;
+					}
+					if (this.citadels.contains(state.getBox(i, columnFrom))
+							&& !this.citadels.contains(state.getBox(action.getRowFrom(), action.getColumnFrom()))) {
+						return false;
+					}
+				}
+			} else if (columnFrom == columnTo && rowFrom < rowTo){
+				for (int i = rowFrom + 1; i <= rowTo; i++) {
+					if (!state.getPawn(i, columnFrom).equalsPawn(State.Pawn.EMPTY.toString())) {
+						return false;
+					}
+					if (this.citadels.contains(state.getBox(i, columnFrom))
+							&& !this.citadels.contains(state.getBox(action.getRowFrom(), action.getColumnFrom()))) {
+						return false;
+					}
+				}
+			}
+		
+		return true;
+	}
+	
 }
