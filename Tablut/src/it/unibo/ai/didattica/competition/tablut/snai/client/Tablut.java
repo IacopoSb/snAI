@@ -5,6 +5,7 @@ import it.unibo.ai.didattica.competition.tablut.domain.Action;
 import it.unibo.ai.didattica.competition.tablut.domain.GameAshtonTablut;
 import it.unibo.ai.didattica.competition.tablut.domain.State;
 import it.unibo.ai.didattica.competition.tablut.domain.StateTablut;
+import it.unibo.ai.didattica.competition.tablut.snai.ricerca.TablutSearch;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -180,9 +181,9 @@ public class Tablut extends TablutClient {
 
     private Action findBestMove(GameAshtonTablut tablutGame, State state) {
 
-        // TODO implement the search algorithm
-        
-        return null;
+        TablutSearch search = new TablutSearch(tablutGame, Double.MIN_VALUE, Double.MAX_VALUE, super.getTimeout() - 2);
+        search.setLogEnabled(debug);
+        return search.makeDecision(state);
     }
 
     private static void AsciiLogo() {
