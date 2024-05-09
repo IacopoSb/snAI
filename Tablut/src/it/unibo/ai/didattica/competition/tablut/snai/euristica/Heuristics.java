@@ -23,6 +23,31 @@ public abstract class Heuristics {
                                {7,4},
                         {8,3}, {8,4}, {8,5},
     };
+    
+    
+    protected final int TILES_IN_RHOMBUS = 8;
+    private final int[][] rhombus = {
+            {1,2},       {1,6},
+    {2,1},                   {2,7},
+
+    {6,1},                   {6,7},
+            {7,2},       {7,6}
+    };
+
+    private final int[][] winPosition = {
+            {0,1}, {0,2},        {0,6}, {0,7},
+    {1,0},                                    {1,8},
+    {2,0},                                    {2,8},
+
+    {6,0},                                    {6,8},
+    {7,0},                                    {7,8},
+            {8,1}, {8,2},        {8,6}, {8,7}
+    };
+    
+    
+    protected final int NUMWHITE = 8;
+    protected final int NUMBLACK = 16;
+
 
     public Heuristics(State state) {
         this.state = state;
@@ -544,6 +569,77 @@ public abstract class Heuristics {
         return false;
     }
 
+    protected double kingDistanceFromWin(){
+        int[] king = kingPosition(state);
+        double min = Double.MAX_VALUE;
+        for (int[] win : winPosition) {
+            if (min > (Math.abs(king[0] - win[0]) + Math.abs(king[1] - win[1])))
+                min = Math.abs(king[0] - win[0]) + Math.abs(king[1] - win[1]);
+        }
+        return min;
+    }
 
+        /**
+     * @return The number of white pawns that can be captured.
+     */
+    protected int getPossibleCatches() {
+        int capturable = 0;
+
+        State.Pawn[][] board = state.getBoard();
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j].equalsPawn(State.Pawn.WHITE.toString())) {
+                    capturable += canBeCaptured(state, new int[]{i, j}, State.Pawn.WHITE) ? 1 : 0;
+                }
+            }
+        }
+
+        return capturable;
+    }
+
+    /**
+     * 
+     * @return The number of black pawns on rhombus if there are at least a total of 10 black pawns, 0 otherwhise.
+     */
+    public int getRhombusValue() {
+        if (state.getNumberOf(State.Pawn.BLACK) >= 10) {
+            return blacksInRhombus();
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * @return The number of black pawns on rhombus configuration.
+     */
+    public int blacksInRhombus() {
+        int count = 0;
+
+        for (int[] position : rhombus) {
+            if (state.getPawn(position[0], position[1]).equalsPawn(State.Pawn.BLACK.toString())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * @return The number of pawns blocking king escape.
+     */
+    public int blockingPawns() {
+        return 4 - Arrays.stream(getKingEscapes(state, kingPosition(state))).sum();
+    }
+
+    /**
+     * Used to add value to the position if we create win threats.
+     *
+     * @return 10.0 if the king can be captured, 0.0 otherwise.
+     */
+    protected double canCaptureKing() {
+        if (canBeCaptured(state, kingPosition(state), State.Pawn.KING))
+            return +10.0;
+
+        return 0.0;
+    }
 }
 
