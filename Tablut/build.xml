@@ -1,7 +1,7 @@
 <!-- Le istruzioni su come usare ANT per eseguire il progetto, sono incluse nel file
      di README, nella home del progetto -->
 
-<project name="Tablut" default="compile">
+<project name="snAI" default="compile">
 
     <target name="clean">
         <delete dir="build"/>
@@ -11,7 +11,7 @@
         <mkdir dir="build"/>
         <javac encoding="iso-8859-1" srcdir="src" destdir="build" includeantruntime="false">
             <classpath>
-            	<pathelement path="lib/aida-core.jar"/>
+            	<pathelement path="lib/aima-core.jar"/>
                 <pathelement path="lib/gson-2.2.2.jar" />
                 <pathelement path="lib/commons-cli-1.4.jar" />
             </classpath>
@@ -32,7 +32,7 @@
     </target>
 
     <target name="server-jar">
-        <jar destfile="server.jar" filesetmanifest="mergewithoutmain">
+        <jar destfile="jars/server.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="it.unibo.ai.didattica.competition.tablut.server.Server"/>
                 <attribute name="Class-Path" value="."/>
@@ -112,6 +112,71 @@
         </java>
     </target>
 
+    <target name="snaiblack">
+        <java classname="it.unibo.ai.didattica.competition.tablut.snai.client.BlackTablut" fork="true">
+            <classpath>
+            	<pathelement path="lib/aima-core.jar"/>
+                <pathelement location="lib/gson-2.2.2.jar"/>
+                <pathelement location="build"/>
+            </classpath>
+        </java>
+    </target>
+	
+	<target name="snaiblack-jar">
+	        <jar destfile="jars/snaiblack.jar" filesetmanifest="mergewithoutmain">
+	            <manifest>
+	                <attribute name="Main-Class" value="it.unibo.ai.didattica.competition.tablut.snai.client.BlackTablut"/>
+	                <attribute name="Class-Path" value="."/>
+	            </manifest>
+	            <fileset dir="build"/>
+	            <zipfileset excludes="META-INF/*.SF" src="lib/aima-core.jar"/>
+	            <zipfileset excludes="META-INF/*.SF" src="lib/gson-2.2.2.jar"/>
+	        </jar>
+	    </target>
+	
+	<target name="snaiwhite">
+	        <java classname="it.unibo.ai.didattica.competition.tablut.snai.client.WhiteTablut" fork="true">
+	            <classpath>
+	            	<pathelement path="lib/aima-core.jar"/>
+	                <pathelement location="lib/gson-2.2.2.jar"/>
+	                <pathelement location="build"/>
+	            </classpath>
+	        </java>
+	    </target>
+		
+		<target name="snaiwhite-jar">
+		        <jar destfile="jars/snaiwhite.jar" filesetmanifest="mergewithoutmain">
+		            <manifest>
+		                <attribute name="Main-Class" value="it.unibo.ai.didattica.competition.tablut.snai.client.WhiteTablut"/>
+		                <attribute name="Class-Path" value="."/>
+		            </manifest>
+		            <fileset dir="build"/>
+		            <zipfileset excludes="META-INF/*.SF" src="lib/aima-core.jar"/>
+		            <zipfileset excludes="META-INF/*.SF" src="lib/gson-2.2.2.jar"/>
+		        </jar>
+		  </target>
+
+	<target name="snai">
+		        <java classname="it.unibo.ai.didattica.competition.tablut.snai.client.Tablut" fork="true">
+		            <classpath>
+		            	<pathelement path="lib/aima-core.jar"/>
+		                <pathelement location="lib/gson-2.2.2.jar"/>
+		                <pathelement location="build"/>
+		            </classpath>
+		        </java>
+		    </target>
+			
+			<target name="snai-jar">
+			        <jar destfile="jars/snai.jar" filesetmanifest="mergewithoutmain">
+			            <manifest>
+			                <attribute name="Main-Class" value="it.unibo.ai.didattica.competition.tablut.snai.client.Tablut"/>
+			                <attribute name="Class-Path" value="."/>
+			            </manifest>
+			            <fileset dir="build"/>
+			            <zipfileset excludes="META-INF/*.SF" src="lib/aima-core.jar"/>
+			            <zipfileset excludes="META-INF/*.SF" src="lib/gson-2.2.2.jar"/>
+			        </jar>
+			  </target>
 
 
 </project>
