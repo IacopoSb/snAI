@@ -5,7 +5,7 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
-JAR_DIR="Tablut/jars"
+JAR_DIR="/home/tablut/tablut/Tablut/jars"
 JAR_FILE="snai.jar"
 
 if [ ! -f "$JAR_DIR/$JAR_FILE" ]; then
